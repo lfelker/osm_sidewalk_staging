@@ -1,4 +1,4 @@
-# osm_sidewalk_staging
+# About
 tool to prepare sidewalk data for OSM staging with Open Sidewalks schema
 
 # Basic Workflow

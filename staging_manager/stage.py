@@ -15,13 +15,14 @@ base_url = 'https://import.opensidewalks.com'
 # 					layers dictionary with sidewalk and crossing geo-data-frames to stage for OSM
 # optional: curbramp geo-data-frame or additionaly layers in dictionary
 # performs: stageing for OSM
-def stage(streets, layers, boundary, city, title):
+def stage(streets, layers, boundary, city, title, visualize):
 	click.echo('staging ' + title)
 
 	tasks = subtasks.blocks_subtasks(streets)
 
 	if boundary != None:
 		tasks = subtasks.filter_blocks_by_poly(tasks, boundary)
+	if visualize:
 		bound.visualize(tasks, buff=boundary, title=str(len(tasks)) + " Tasks Created", extras=[layers["sidewalks"]])
 	click.echo(str(len(layers["sidewalks"])) + " Sidewalks Split Into " + str(len(tasks)) + " Tasks")
 	tasks = tasks.to_crs(web_merc_crs) # make sure crs is correct

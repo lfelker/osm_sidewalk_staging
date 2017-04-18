@@ -22,7 +22,7 @@ def main():
 	redraw_sidewalks = True # allows skipping of redraw during development
 
 	click.echo("Starting Process")
-	json_sources = open("source_json_examples/sources_point_buffer_boundary.json").read()
+	json_sources = open("source_json_examples/sources_no_boundary.json").read()
 	sources = json.loads(json_sources)
 
 	streets_path = sources['layers']['streets']['path']
@@ -100,7 +100,7 @@ def main():
 
 	import_name = sources['import_name']
 	city = sources['city']
-	stage.stage(streets, layers_gdf, boundary_stage, city, import_name)
+	stage.stage(streets, layers_gdf, boundary_stage, city, import_name, visualize)
 
 def check_visualization_limit(number_of_elements):
 	return number_of_elements < VISUALIZE_LIMIT

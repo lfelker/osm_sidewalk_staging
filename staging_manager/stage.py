@@ -4,13 +4,14 @@ import shutil
 import click
 from . import osm
 from . import subtasks
+from . import bound
 
 # These should be consistent across imports
-crs_staging = {'init': 'epsg:4326'}
+web_merc_crs = {'init': 'epsg:4326'}
 base_url = 'https://import.opensidewalks.com'
 
 # requires: street network to create tasks
-#						boundary for data staging
+#					boundary for data staging
 # 					layers dictionary with sidewalk and crossing geo-data-frames to stage for OSM
 # optional: curbramp geo-data-frame or additionaly layers in dictionary
 # performs: stageing for OSM
@@ -18,16 +19,18 @@ def stage(streets, layers, boundary, city, title):
 	click.echo('staging ' + title)
 
 	tasks = subtasks.blocks_subtasks(streets)
+	bound.visualize(tasks, buff=boundary, title="Tasks")
+
 	if boundary != None:
 		tasks = subtasks.filter_blocks_by_poly(tasks, boundary)
-	tasks.crs = crs_staging
-	#tasks = tasks.to_crs(crs_staging)
+		bound.visualize(tasks, buff=None, title="filtered tasks", extras=[layers["sidewalks"]])
+	tasks = tasks.to_crs(web_merc_crs) # make sure crs is correct
 	title_escp = title.replace(' ', '_')
 	tasks_path = prepare_output_directory(tasks, city, title_escp)
 
 	layers_gdfs = {}
 	for layer_key in layers.keys():
-		layers_gdfs[layer_key] = layers[layer_key].to_crs(crs_staging)
+		layers_gdfs[layer_key] = layers[layer_key].to_crs(web_merc_crs)
 
 	layers_gdfs = prepare_layer_for_osm(layers_gdfs)
 	tasks_gdfs = split_geometry_into_tasks(layers_gdfs, tasks)
@@ -68,7 +71,7 @@ def prepare_layer_for_osm(layers_gdfs):
 		elif layer_name == 'curbramps':
 			layer = layer[['geometry']]
 			layer['kerb'] = 'lowered'
-			layers_gdfs[layer_name] = layer
+		layers_gdfs[layer_name] = layer
 	click.echo('done')
 	return layers_gdfs
 

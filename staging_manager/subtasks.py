@@ -12,6 +12,7 @@ def blocks_subtasks(streets):
     # Generate blocks by polygonizing streets. Not perfect, but pretty good.
     polygons = list(ops.polygonize(list(streets.geometry)))
     blocks = gpd.GeoDataFrame(geometry=polygons)
+    blocks.crs = streets.crs
     blocks['poly_id'] = blocks.index
 
     return blocks
@@ -35,9 +36,10 @@ def filter_blocks_by_poly(blocks, polygon):
 
     # Find the blocks that intersect the polygon (actual intersection)
     new_blocks = bbox_ixn.loc[bbox_ixn.intersects(polygon)].copy()
+    print(new_blocks)
 
     # Alter the blocks to the shape of the enclosing polygon
-    new_blocks['geometry'] = new_blocks.intersection(polygon)
+    #new_blocks['geometry'] = new_blocks.intersection(polygon)
 
     # Recreate the index + poly_id
     new_blocks.reset_index(drop=True, inplace=True)

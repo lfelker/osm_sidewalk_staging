@@ -4,38 +4,36 @@ from . import buffer_logic
 
 import matplotlib.pyplot as plt
 
+def bound(data, boundary):
+	print("number of segments in data = " + str(len(data)))
+	clipped_data = buffer_logic.clip_data(data, boundary)
+	print("number of segments in section = " + str(len(clipped_data)))
+	return clipped_data
+
 # Three options determined by sources boundary parameters
 # 1) No Boundary
 # 2) Boundary Passed In
 # 3) Bondaries Passed in with Name
 # 4) Point Passed in with Buffer Distance
-def bound(sidewalks, boundary):
-	sidewalks = buffer_logic.clip_data(sidewalks, boundary)
-	print("number of sidewalks in section = " + len(sidewalks))
-	print("visualizing area")
-	visualize(sidewalks, buff=boundary)
-	return sidewalks
-
-
-def get_boundary(sources, crs):
+# returns bondard in utm_crs passed as parameter
+def get_boundary(sources, buffer_crs, result_crs, buff_multiplier=1):
 	boundary_path = sources['boundary']['path']
 	if boundary_path == "None":
 		return None
 	else:
 		boundaries = gpd.read_file(boundary_path)
 		# convert crs to standard web mercator so intersections line up
-		boundaries = boundaries.to_crs(crs)
+		boundaries = boundaries.to_crs(buffer_crs)
 		# check if we need further selection of data like to a nighborhood
 		if sources['boundary']['selection'] == "True":
 			selector = sources['boundary']['attribute_selector']
 			value = sources['boundary']['attribute_selector_value']
 			boundary_selection = boundaries[boundaries[selector] == value]
-			buffer_distance = sources['boundary']['buffer_distance_meters']
+			buffer_distance = sources['boundary']['buffer_distance_meters'] * buff_multiplier
 			if buffer_distance > 0:
 				# treat boundary as a point to buffer
 				# return polygon boundary
-				# what projection should the buffer be done in??
-				return buffer_logic.buffer_point(boundary_selection, buffer_distance)
+				return buffer_logic.buffer_point(boundary_selection, buffer_distance, buffer_crs, result_crs)
 			else:
 				boundaries = boundary_selection.geometry
 		
@@ -45,14 +43,19 @@ def get_boundary(sources, crs):
 		for index, value in boundaries.iteritems():
 			return value
 
-def visualize(data, buff=None):
+def visualize(data, buff=None, title=None, extras=[]):
 	#plt.ion()
+	plot_ref = None
 	if buff == None:
-		data.plot(color='grey')
-		plt.show()
+		plot_ref = data.plot(color='grey')
 	else: 
 		buffers = []
 		buffers.append(buff)
 		plot_ref = GeoSeries(buffers).plot()
 		data.plot(ax=plot_ref, color='grey')
-		plt.show()
+	if title != None:
+		plt.title(title)
+	if len(extras) > 0:
+		for layer in extras:
+			layer.plot(ax=plot_ref, color='blue')
+	plt.show()

@@ -1,4 +1,3 @@
-# TODO: dockerfile to install directories
 import json
 import os
 import click
@@ -10,9 +9,6 @@ import shapely
 import matplotlib.pyplot as plt
 import matplotlib
 import fiona
-
-import data_manager as dm
-#from data_manager import graph, redraw
 
 import staging_manager
 from staging_manager import buffer_logic, bound, stage

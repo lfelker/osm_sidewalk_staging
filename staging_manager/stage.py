@@ -19,11 +19,11 @@ def stage(streets, layers, boundary, city, title):
 	click.echo('staging ' + title)
 
 	tasks = subtasks.blocks_subtasks(streets)
-	bound.visualize(tasks, buff=boundary, title="Tasks")
 
 	if boundary != None:
 		tasks = subtasks.filter_blocks_by_poly(tasks, boundary)
-		bound.visualize(tasks, buff=None, title="filtered tasks", extras=[layers["sidewalks"]])
+		bound.visualize(tasks, buff=boundary, title=str(len(tasks)) + " Tasks Created", extras=[layers["sidewalks"]])
+	click.echo(str(len(layers["sidewalks"])) + " Sidewalks Split Into " + str(len(tasks)) + " Tasks")
 	tasks = tasks.to_crs(web_merc_crs) # make sure crs is correct
 	title_escp = title.replace(' ', '_')
 	tasks_path = prepare_output_directory(tasks, city, title_escp)

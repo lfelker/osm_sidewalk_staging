@@ -19,70 +19,74 @@ from staging_manager import buffer_logic, bound, stage
 
 import sidewalkify
 
+VISUALIZE_LIMIT = 1500
+
 def main():
 	web_merc_crs = {'init': 'epsg:4326'}
-	redraw_sidewalks = True # allows skipping or redraw during development
+	redraw_sidewalks = True # allows skipping of redraw during development
 
-	click.echo("starting process")
+	click.echo("Starting Process")
 	json_sources = open("source_json_examples/sources_point_buffer_boundary.json").read()
 	sources = json.loads(json_sources)
 
 	streets_path = sources['layers']['streets']['path']
 	streets =  gpd.read_file(streets_path)
 	streets_crs = streets.crs
+	# TODO: ensure UTM is correct
 
-	#TODO: click.echo("standardizing schema")
+	# TODO: click.echo("standardizing schema")
 	# stadardize column names before being passed to graph
 	# standardize_streets(sources)
 
-	#TODO: click.echo("clean data")
+	# TODO: click.echo("clean data")
 
-	# when calculaing buffers and doing intersections this boundary needs to be in the same crs
-	# as the streets dataset which whould be in utm
+	# when calculaing buffers and doing intersections crs should be in utm.
+	# for clip operation we want more than what the final buffer will be so we use multipler
 	boundary_clip   = bound.get_boundary(sources, streets_crs, streets_crs, buff_multiplier=1.25)
-	boundary = bound.get_boundary(sources, streets_crs, streets_crs)
+	boundary_real = bound.get_boundary(sources, streets_crs, streets_crs)
 	sidewalks = None
+
+	visualize = check_visualization_limit(len(streets))
+
 	if redraw_sidewalks:
 		if boundary_clip != None:
-			click.echo("clipping streets to boundary")
+			click.echo("Clipping Streets To Boundary")
 			streets = bound.bound(streets, boundary_clip)
 			if len(streets) == 0:
-				raise ValueError("no streets found within specifiedboundary")
-			bound.visualize(streets, buff=boundary, title="Streets in Boundary")
-			#streets = streets.to_crs(streets_crs) # streets must be converted back to original crs before generating sidewalks
+				raise ValueError("no streets found within specified boundary")
+
+			visualize = check_visualization_limit(len(streets))
+			if visualize:
+				bound.visualize(streets, buff=boundary_real, title="Streets in Boundary")
 			# TODO: what if streets number is really large?
 
-		click.echo("creating graph")
+		click.echo("Creating Graph Of Streets")
 		G = sidewalkify.graph.create_graph(streets)
 
-		click.echo("creating paths")
+		click.echo("Finding Paths in Graph")
 		paths = sidewalkify.graph.process_acyclic(G)
 		paths += sidewalkify.graph.process_cyclic(G)
 
-		# TODO: strip out MultiLineString here
+		# TODO: strip out MultiLineString here??
 		# input is only line strings - one to one mapping to street and sidewalks
 
-		click.echo("redrawing sidewalks")
+		click.echo("Generating Sidewalks")
 		sidewalks = sidewalkify.draw.draw_sidewalks(paths, streets_crs)
-		click.echo("redrawn sidewalks outputed to ./source_data/sidewalks.shp")
 		sidewalks.to_file('./output/cleaned/sidewalks.shp')
+		click.echo("Generated Sidewalks Outputed To: ./output/cleaned/sidewalks.shp")
 	else:
 		sidewalks = gpd.read_file('./output/cleaned/sidewalks.shp')
 
-	# do we need to clip sidewalks if streets have already been clipped? no
-	click.echo("visualizing generated sidewalks")
-	if boundary_clip != None:
-		bound.visualize(sidewalks, buff=boundary, title="Generated Sidewalks In Boundary")
-	else:
-		bound.visualize(sidewalks, title="Generate Sidewalks")
-
-	click.echo("converting projections to web mercator")
+	click.echo("Converting Projections To Web Mercator")
 	sidewalks = sidewalks.to_crs(web_merc_crs)
 	streets = streets.to_crs(web_merc_crs)
-	# recalculate the boundary with web_merc_crs
 	boundary_stage = bound.get_boundary(sources, streets_crs, web_merc_crs)
-	bound.visualize(streets, boundary_stage)
-	# TODO: convert boundary
+
+	click.echo("Visualizing Generated Sidewalks")
+	if visualize:
+		bound.visualize(sidewalks, buff=boundary_stage, title="Generated Sidewalks")
+	else:
+		click.echo("Visualization Turned Off Due To Size Of Staging Data")
 
 	#generateCrossings()
 
@@ -90,7 +94,7 @@ def main():
 
 	#addcurbramps
 
-	click.echo('starting staging process')
+	click.echo('Starting Staging Process')
 	layers_gdf = {
 		'sidewalks': sidewalks
 	}
@@ -100,9 +104,10 @@ def main():
 
 	import_name = sources['import_name']
 	city = sources['city']
-	# Should bondary be in web mercator??
 	stage.stage(streets, layers_gdf, boundary_stage, city, import_name)
-	#stage()
+
+def check_visualization_limit(number_of_elements):
+	return number_of_elements < VISUALIZE_LIMIT
 
 
 # TODO: make sure streets has sw_left and sw_right and offset

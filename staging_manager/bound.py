@@ -5,9 +5,7 @@ from . import buffer_logic
 import matplotlib.pyplot as plt
 
 def bound(data, boundary):
-	print("number of segments in data = " + str(len(data)))
 	clipped_data = buffer_logic.clip_data(data, boundary)
-	print("number of segments in section = " + str(len(clipped_data)))
 	return clipped_data
 
 # Three options determined by sources boundary parameters

@@ -23,19 +23,19 @@ tool to prepare sidewalk data for OSM staging with Open Sidewalks schema
 - Example: "import_name": "University District"
 
 ### Layer Information
-#### Streets
-##### Path
-- Example: "path": "./source_data/seattle/streets.shp"
-##### Source
-- Description of where the data is from
-- Example: "source": "King County GIS Data Portal Streets Network"
-##### Sidewalk Coding Information
+	#### Streets
+		##### Path
+		- Example: "path": "./source_data/seattle/streets.shp"
+		##### Source
+		- Description of where the data is from
+		- Example: "source": "King County GIS Data Portal Streets Network"
+		##### Sidewalk Coding Information
 
-##### Metadata
+		##### Metadata
 
-#### Curbramps
-##### Path
-- Example: "path": "./source_data/seattle/curbramps.shp"
+	#### Curbramps
+		##### Path
+		- Example: "path": "./source_data/seattle/curbramps.shp"
 
 ### Bondary Specification
 

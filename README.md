@@ -33,7 +33,8 @@ tool to prepare sidewalk data for OSM staging with Open Sidewalks schema
 - Sidewalk coding is used to understand what the sidewalk values represent. 
 - In the absent["code"] field, you specify all values that represent that there is no sidewalk. A value of zero means anything less than or equal to zero.
 - In the offset["type"] field, you specify what offset coresponds to each sidewalk code. The optional values are "feet", "meter", and "category". "feet" and "meter" values are interpreted to be the offset distance in that unit. "category" values are translated using the way type. The way type code is translated to one of five waytypes using the categorymap of the way type column and then each waytype is translated to an offset distance using "category_offset".
-	Example:
+
+	- Example:
 	"swk_coding": {
 		"absent": {
 			"code": [0, 2]

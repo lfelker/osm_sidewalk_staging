@@ -49,6 +49,10 @@
             "C": "colector_arterial",
             "L": "local"
           }
+        },
+        "associatedStreet": {
+          "colname": "associatedStreet",
+          "build_from_colnames": ["PREFIX_L", "NAME_L", "TYPE_L", "SUFFIX_L"]
         }
       }
     },

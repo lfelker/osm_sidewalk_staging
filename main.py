@@ -25,7 +25,7 @@ def main():
 	redraw_sidewalks = True # allows skipping of redraw during development
 
 	click.echo("Loading Data")
-	json_sources = open("source_json_examples/sources_no_boundary.json").read()
+	json_sources = open("source_json_examples/sources_judkins_station.json").read()
 	sources = json.loads(json_sources)
 
 	streets_path = sources['layers']['streets']['path']
@@ -34,6 +34,7 @@ def main():
 	# TODO: ensure UTM is correct
 
 	# TODO: click.echo("clean data")
+
 
 	# when calculaing buffers and doing intersections crs should be in utm.
 	# for clip operation we want more than what the final buffer will be so we use multipler
@@ -55,6 +56,7 @@ def main():
 				bound.visualize(streets, buff=boundary_real, title="Streets in Boundary")
 
 		click.echo("Standardizing Schema")
+		streets = build_associated_street(streets, sources)
 		streets = prepare_sidewalk_offset(streets, sources)
 		st_meta = sources['layers']['streets']['metadata']
 		streets = standardize.standardize_df(streets, st_meta)
@@ -65,6 +67,8 @@ def main():
 		click.echo("Finding Paths in Graph")
 		paths = sidewalkify.graph.process_acyclic(G)
 		paths += sidewalkify.graph.process_cyclic(G)
+
+		print(streets.head())
 
 		click.echo("Generating Sidewalks")
 		sidewalks = sidewalkify.draw.draw_sidewalks(paths, streets_crs)
@@ -97,8 +101,7 @@ def main():
 		curbramps = gpd.read_file(sources['layers']['curbramps']['path'])
 		layers_gdf['curbramps'] = curbramps
 
-	click.echo("Starting Staging Process")
-		
+	click.echo("Starting Staging Process")	
 
 	import_name = sources['import_name']
 	city = sources['city']
@@ -107,7 +110,30 @@ def main():
 def check_visualization_limit(number_of_elements):
 	return number_of_elements < VISUALIZE_LIMIT
 
+def build_associated_street(streets, sources):
+	print("here")
+	if "associatedStreet" in sources["layers"]["streets"]["metadata"]:
+		print("now here")
+		columns = sources["layers"]["streets"]["metadata"]["associatedStreet"]["build_from_colnames"]
+
+		def build_street(street):
+			associated_street = ""
+			for column in columns:
+				element = street[column]
+				if element == None:
+					continue
+				elif len(associated_street) == 0 and len(element) > 0:
+					associated_street = element
+				elif len(associated_street) > 0 and len(element) > 0:
+					associated_street += " " + element
+			street["associatedStreet"] = associated_street
+			return street
+
+		streets = streets.apply(build_street, axis=1)
+	return streets
+
 # convert offset values to follow <= 0 absent and >0 = offset distance
+# also conditionally convert waytype to offset value if offset distance unknown
 def prepare_sidewalk_offset(streets, sources):
 	st_meta = sources['layers']['streets']['metadata']
 	swk_meta = sources['layers']['streets']['swk_coding']

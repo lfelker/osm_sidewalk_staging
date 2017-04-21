@@ -62,7 +62,7 @@ tool to prepare sidewalk data for OSM staging with Open Sidewalks schema
           	}
 
 		}
-		
+
 	}
 ##### Metadata
 1) primary key
@@ -92,6 +92,6 @@ tool to prepare sidewalk data for OSM staging with Open Sidewalks schema
 #### Attribute Selector value
 - Example "attribute_selector_value": "University District",
 #### Buffer Distance Meters
-- If you are trying to create a boundary a cetain distance around a point, then the selected feature about must be a point, and here you select how large of a buffer. If your above selection is a polygon then set this value to zero.
+- If you are trying to create a boundary a cetain distance around a point, then the selected feature above must be a point, and here you select how large of a buffer. If your above selection is a polygon then set this value to zero.
 - Example "buffer_distance_meters": 850
 

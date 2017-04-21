@@ -59,6 +59,7 @@ def main():
 		print(paths[0])
 		edges = []
 		geoms = []
+		multi = []
 		for path in paths:
 			for edge in path["edges"]:
 				geom = edge['geometry'].parallel_offset(1, 'right',
@@ -69,13 +70,16 @@ def main():
 					print(edge['geometry'])
 					print("GEOM AFTER PARALLEL OFFSET")
 					print(geom)
+					multi.append({'geometry': geom})
 				geoms.append({'geometry': geom})
 				edges.append(edge)
 
 		edges_gdf = gpd.GeoDataFrame(edges)
 		geoms_gdf = gpd.GeoDataFrame(geoms)
-		print(edges_gdf.head())
-		print(geoms_gdf.head())
+		multi_gdf = gpd.GeoDataFrame(multi)
+		#print(edges_gdf.head())
+		#print(geoms_gdf.head())
+		bound.visualize(multi_gdf)
 
 		pathLines = edges_gdf.loc[edges_gdf.geometry.type == 'LineString']
 		pathMulti = edges_gdf.loc[edges_gdf.geometry.type == 'MultiLineString']

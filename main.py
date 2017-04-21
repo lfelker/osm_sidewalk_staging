@@ -13,6 +13,9 @@ import fiona
 import staging_manager
 from staging_manager import buffer_logic, bound, stage
 
+import data_manager
+from data_manager import standardize
+
 import sidewalkify
 
 VISUALIZE_LIMIT = 1500
@@ -21,7 +24,7 @@ def main():
 	web_merc_crs = {'init': 'epsg:4326'}
 	redraw_sidewalks = True # allows skipping of redraw during development
 
-	click.echo("Starting Process")
+	click.echo("Loading Data")
 	json_sources = open("source_json_examples/sources_no_boundary.json").read()
 	sources = json.loads(json_sources)
 
@@ -29,10 +32,6 @@ def main():
 	streets =  gpd.read_file(streets_path)
 	streets_crs = streets.crs
 	# TODO: ensure UTM is correct
-
-	# TODO: click.echo("standardizing schema")
-	# stadardize column names before being passed to graph
-	# standardize_streets(sources)
 
 	# TODO: click.echo("clean data")
 
@@ -54,7 +53,11 @@ def main():
 			visualize = check_visualization_limit(len(streets))
 			if visualize:
 				bound.visualize(streets, buff=boundary_real, title="Streets in Boundary")
-			# TODO: what if streets number is really large?
+
+		click.echo("Standardizing Schema")
+		streets = prepare_sidewalk_offset(streets, sources)
+		st_meta = sources['layers']['streets']['metadata']
+		streets = standardize.standardize_df(streets, st_meta)
 
 		click.echo("Creating Graph Of Streets")
 		G = sidewalkify.graph.create_graph(streets)
@@ -62,9 +65,6 @@ def main():
 		click.echo("Finding Paths in Graph")
 		paths = sidewalkify.graph.process_acyclic(G)
 		paths += sidewalkify.graph.process_cyclic(G)
-
-		# TODO: strip out MultiLineString here??
-		# input is only line strings - one to one mapping to street and sidewalks
 
 		click.echo("Generating Sidewalks")
 		sidewalks = sidewalkify.draw.draw_sidewalks(paths, streets_crs)
@@ -86,17 +86,19 @@ def main():
 
 	#generateCrossings()
 
-	#annotate()
+	#annotatecrossings()
 
-	#addcurbramps
-
-	click.echo('Starting Staging Process')
 	layers_gdf = {
 		'sidewalks': sidewalks
 	}
 
-	#if extra_layers:
-	# add extra layers
+	if 'curbramps' in sources['layers']:
+		click.echo("Loading curbramps")
+		curbramps = gpd.read_file(sources['layers']['curbramps']['path'])
+		layers_gdf['curbramps'] = curbramps
+
+	click.echo("Starting Staging Process")
+		
 
 	import_name = sources['import_name']
 	city = sources['city']
@@ -105,14 +107,39 @@ def main():
 def check_visualization_limit(number_of_elements):
 	return number_of_elements < VISUALIZE_LIMIT
 
+# convert offset values to follow <= 0 absent and >0 = offset distance
+def prepare_sidewalk_offset(streets, sources):
+	st_meta = sources['layers']['streets']['metadata']
+	swk_meta = sources['layers']['streets']['swk_coding']
+	offset_type = swk_meta['offset']['type']
 
-# TODO: make sure streets has sw_left and sw_right and offset
-# or change graph to handle alternate inputs
-def standardize_streets(sources):
-	streets_path = sources['layers']['streets']['path']
-	print(streets_path)
-	streets = gpd.read_file(streets_path)
-	#print(streets.head())
+	def claculate_offset(street):
+		swk_left_colname = st_meta['sw_left']['colname']
+		swk_right_colname = st_meta['sw_right']['colname']
+		left_offset = street[swk_left_colname]
+		right_offset = street[swk_right_colname]
+		street[swk_left_colname] = translate_offset(left_offset, street)
+		street[swk_right_colname] = translate_offset(right_offset, street)
+		return street
+
+	def translate_offset(offset, street):
+		swk_absent_values = swk_meta['absent']['code']
+		if offset in swk_absent_values or offset < 0:
+			return 0
+		else:
+			if offset_type == "category":
+				waytype_colname = st_meta['waytype']['colname']
+				way_code = street[waytype_colname]
+				way_type = st_meta['waytype']['categorymap'][way_code]
+				offset_value = swk_meta['offset']['category_offset'][way_type]
+				return offset_value
+			else:
+				return offset
+
+	streets_crs = streets.crs
+	streets_correct_offset = streets.apply(claculate_offset, axis=1)
+	streets_correct_offset.crs = streets_crs
+	return streets_correct_offset
 
 if __name__ == "__main__":
 	main()

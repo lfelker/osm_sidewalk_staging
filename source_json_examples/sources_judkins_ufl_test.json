@@ -1,0 +1,70 @@
+{
+  "city": "seattle",
+  "import_name": "judkins_ufl_test_import",
+  "boundary": {
+    "path": "./source_data/stations/east_link_light_rail_stations.shp",
+    "selection": "True",
+    "attribute_selector": "name",
+    "attribute_selector_value": "judkins",
+    "buffer_distance_meters": 850
+  },
+  "layers": {
+    "streets": {
+    	"path": "./source_data/king_county/transportation_network_sidewalks.shp",
+      "source": "King County GIS Data Portal and Urban Forum Lab Sidewalk Data",
+      "swk_coding": {
+        "absent": {
+          "code": [0, 2],
+          "_comment": "absent coding are values that signify no sidewalk, 0 means anything less than zero"
+        },
+        "offset": {
+          "type": "category",
+          "category_offset": {
+            "freeway": 0,
+            "primary_arterial": 20,
+            "minor_arterial": 11,
+            "colector_arterial": 8,
+            "local": 6.25
+          },
+          "_comment": "offset type options: [value, category, none]. If none, any non absent value means only present. category uses way type"
+        }
+      },
+      "metadata": {
+        "pkey": {
+            "colname": "TLINK_ID",
+            "nullvalue": 0
+        },
+        "sw_left": {
+        	"colname": "kcn_swk__1"
+        },
+        "sw_right": {
+          "colname": "kcn_swk__2"
+        },
+        "waytype": {
+          "colname": "KC_FCC_ID",
+          "categorymap": {
+            "F": "freeway",
+            "P": "primary_arterial",
+            "M": "minor_arterial",
+            "C": "colector_arterial",
+            "L": "local"
+          }
+        }
+      }
+    },
+    "curbramps": {
+      "path": "./source_data/seattle/curbramps.shp"
+    }
+  },
+  "annotations": {
+    "marked_crosswalks": {
+      "url": "https://data.seattle.gov/api/assets/843B8A94-11B2-4B6C-88CA-B9F54803B07D?download=true",
+      "ftype": "zip",
+      "shapefile": "Marked_Crosswalks/SDOT_Marked_Crosswalks",
+      "annotates": "crossings",
+      "default_tags": [{
+        "marked": true
+      }]
+    }
+  }
+}

@@ -36,7 +36,6 @@ def filter_blocks_by_poly(blocks, polygon):
 
     # Find the blocks that intersect the polygon (actual intersection)
     new_blocks = bbox_ixn.loc[bbox_ixn.intersects(polygon)].copy()
-    print(new_blocks)
 
     # Alter the blocks to the shape of the enclosing polygon
     #new_blocks['geometry'] = new_blocks.intersection(polygon)

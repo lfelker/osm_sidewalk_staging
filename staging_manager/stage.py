@@ -16,7 +16,6 @@ base_url = 'https://import.opensidewalks.com'
 # optional: curbramp geo-data-frame or additionaly layers in dictionary
 # performs: stageing for OSM
 def stage(streets, layers, boundary, city, title, visualize):
-	click.echo('staging ' + title)
 
 	tasks = subtasks.blocks_subtasks(streets)
 
@@ -62,9 +61,13 @@ def prepare_layer_for_osm(layers_gdfs):
 	for layer_name in layers_gdfs.keys():
 		layer = layers_gdfs[layer_name]
 		if layer_name == 'sidewalks':
-			layers = layer[['geometry']]
+			if 'associatedStreet' in layer:
+				layer = layer[['geometry', 'associatedStreet']]
+			else:
+				layer = layer[['geometry']]
 			layer['highway'] = 'footway'
 			layer['footway'] = 'sidewalk'
+			layer['wheelchair'] = 'yes'
 		elif layer_name == 'crossings':
 			layer = layer[['geometry', 'marked']]
 			layer['highway'] = 'footway'

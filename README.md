@@ -36,19 +36,33 @@ tool to prepare sidewalk data for OSM staging with Open Sidewalks schema
 
 	- Example:
 	"swk_coding": {
+
 		"absent": {
+
 			"code": [0, 2]
+
 		},
+
 		"offset": {
+
 			"type": "category",
+
 			"category_offset": {
+
 	            "freeway": 0,
+
 	            "primary_arterial": 20,
+
 	            "minor_arterial": 11,
+
 	            "colector_arterial": 8,
+
 	            "local": 6.25
+
           	}
+
 		}
+		
 	}
 ##### Metadata
 1) primary key

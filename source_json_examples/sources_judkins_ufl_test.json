@@ -1,6 +1,6 @@
 {
   "city": "seattle",
-  "import_name": "judkins_ufl_test_import",
+  "import_name": "Judkins Station UFL Data",
   "boundary": {
     "path": "./source_data/stations/east_link_light_rail_stations.shp",
     "selection": "True",
@@ -49,10 +49,6 @@
             "C": "colector_arterial",
             "L": "local"
           }
-        },
-        "associatedStreet": {
-          "colname": "associatedStreet",
-          "build_from_colnames": ["PREFIX_L", "NAME_L", "TYPE_L", "SUFFIX_L"]
         }
       }
     },

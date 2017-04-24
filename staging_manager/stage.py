@@ -1,4 +1,5 @@
 import geopandas as gpd
+from geopandas import GeoDataFrame, GeoSeries
 import os
 import shutil
 import click
@@ -20,9 +21,25 @@ def stage(streets, layers, boundary, city, title, visualize):
 	tasks = subtasks.blocks_subtasks(streets)
 
 	if boundary != None:
+		untasked_area = boundary
+		# ensure every area is tasked by finding remaining area
+		for task_poly in tasks['geometry']:
+			untasked_area = untasked_area.difference(task_poly)
+		untasked_polys = []
+		# add extra polygons as additional tasks
+		for polygon in untasked_area:
+			# do not add very small areas that are probably errors in the street network
+			if polygon.area > 0.0000000001:
+				untasked_polys.append(polygon)
+				length = len(tasks)
+				tasks.loc[length] = {'geometry': polygon, 'poly_id': length}
+
+		bound.visualize(GeoSeries(untasked_polys), title="Extra Areas Found")
 		tasks = subtasks.filter_blocks_by_poly(tasks, boundary)
+
 	if visualize:
-		bound.visualize(tasks, buff=boundary, title=str(len(tasks)) + " Tasks Created", extras=[layers["sidewalks"]])
+		bound.visualize(tasks, title=str(len(tasks)) + " Tasks Created", extras=[layers["sidewalks"]])
+
 	click.echo(str(len(layers["sidewalks"])) + " Sidewalks Split Into " + str(len(tasks)) + " Tasks")
 	tasks = tasks.to_crs(web_merc_crs) # make sure crs is correct
 	title_escp = title.replace(' ', '_')

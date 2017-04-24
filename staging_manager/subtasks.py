@@ -17,6 +17,16 @@ def blocks_subtasks(streets):
 
     return blocks
 
+def blocks_poly_boundary_subtasks(streets, polygon):
+    boundary = polygon.boundary
+    geoms = list(streets.geometry)
+    geoms.append(boundary)
+    polygons = list(ops.polygonize(geoms))
+    blocks = gpd.GeoDataFrame(geometry=polygons)
+    blocks.crs = streets.crs
+    blocks['poly_id'] = blocks.index
+    new_blocks = blocks.loc[blocks.intersects(polygon)].copy()
+    return new_blocks
 
 def filter_blocks_by_poly(blocks, polygon):
     '''Given a GeoDataFrame of polygons (or anything, really), return it

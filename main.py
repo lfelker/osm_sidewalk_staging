@@ -25,8 +25,10 @@ def main():
 	redraw_sidewalks = True # allows skipping of redraw during development
 
 	click.echo("Loading Data")
-	json_sources = open("source_json_examples/sources_judkins_station.json").read()
+	json_sources = open("source_json_examples/sources_judkins_ufl_test.json").read()
 	sources = json.loads(json_sources)
+	import_name = sources['import_name']
+	city = sources['city']
 
 	streets_path = sources['layers']['streets']['path']
 	streets =  gpd.read_file(streets_path)
@@ -56,10 +58,13 @@ def main():
 				bound.visualize(streets, buff=boundary_real, title="Streets in Boundary")
 
 		click.echo("Standardizing Schema")
-		streets = build_associated_street(streets, sources)
+		#streets = build_associated_street(streets, sources)
+		# Associated Street should be directly linked to OSM street value.
+		# To do this we would need to have a one to one mapping between municipal street data and OSM data
 		streets = prepare_sidewalk_offset(streets, sources)
 		st_meta = sources['layers']['streets']['metadata']
 		streets = standardize.standardize_df(streets, st_meta)
+		print(streets.head())
 
 		click.echo("Creating Graph Of Streets")
 		G = sidewalkify.graph.create_graph(streets)
@@ -71,7 +76,7 @@ def main():
 		print(streets.head())
 
 		click.echo("Generating Sidewalks")
-		sidewalks = sidewalkify.draw.draw_sidewalks(paths, streets_crs)
+		sidewalks = sidewalkify.draw.draw_sidewalks(paths, streets_crs, resolution=1)
 		sidewalks.to_file('./output/cleaned/sidewalks.shp')
 		click.echo("Generated Sidewalks Outputed To: ./output/cleaned/sidewalks.shp")
 	else:
@@ -84,7 +89,7 @@ def main():
 
 	click.echo("Visualizing Generated Sidewalks")
 	if visualize:
-		bound.visualize(sidewalks, buff=boundary_stage, title="Generated Sidewalks")
+		bound.visualize(sidewalks, buff=boundary_stage, title=import_name + " Generated Sidewalks")
 	else:
 		click.echo("Visualization Turned Off Due To Size Of Staging Data")
 
@@ -101,16 +106,24 @@ def main():
 		curbramps = gpd.read_file(sources['layers']['curbramps']['path'])
 		layers_gdf['curbramps'] = curbramps
 
+	click.echo("Removing Freeways from streets Network")
+	if "waytype" in streets:
+		streets = streets.loc[streets.waytype != "freeway"]
+
 	click.echo("Starting Staging Process")	
 
-	import_name = sources['import_name']
-	city = sources['city']
 	stage.stage(streets, layers_gdf, boundary_stage, city, import_name, visualize)
 
 def check_visualization_limit(number_of_elements):
 	return number_of_elements < VISUALIZE_LIMIT
 
+# Example of associatedStreet json in metadata
+#        "associatedStreet": {
+#          "colname": "associatedStreet",
+#          "build_from_colnames": ["PREFIX_L", "NAME_L", "TYPE_L", "SUFFIX_L"]
+#        }
 def build_associated_street(streets, sources):
+
 	print("here")
 	if "associatedStreet" in sources["layers"]["streets"]["metadata"]:
 		print("now here")
@@ -153,6 +166,7 @@ def prepare_sidewalk_offset(streets, sources):
 		if offset in swk_absent_values or offset < 0:
 			return 0
 		else:
+			return 1
 			if offset_type == "category":
 				waytype_colname = st_meta['waytype']['colname']
 				way_code = street[waytype_colname]

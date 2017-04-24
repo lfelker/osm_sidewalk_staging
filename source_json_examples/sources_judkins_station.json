@@ -1,6 +1,6 @@
 {
   "city": "seattle",
-  "import_name": "judkins_station",
+  "import_name": "Judkins Station",
   "boundary": {
     "path": "./source_data/stations/east_link_light_rail_stations.shp",
     "selection": "True",

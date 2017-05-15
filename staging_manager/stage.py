@@ -16,31 +16,17 @@ base_url = 'https://import.opensidewalks.com'
 # 					layers dictionary with sidewalk and crossing geo-data-frames to stage for OSM
 # optional: curbramp geo-data-frame or additionaly layers in dictionary
 # performs: stageing for OSM
-def stage(streets, layers, boundary, city, title, visualize):
-
-	tasks = subtasks.blocks_subtasks(streets)
-
-	if boundary != None:
-		untasked_area = boundary
-		# ensure every area is tasked by finding remaining area
-		for task_poly in tasks['geometry']:
-			untasked_area = untasked_area.difference(task_poly)
-		untasked_polys = []
-		# add extra polygons as additional tasks
-		for polygon in untasked_area:
-			# do not add very small areas that are probably errors in the street network
-			if polygon.area > 0.0000000001:
-				untasked_polys.append(polygon)
-				length = len(tasks)
-				tasks.loc[length] = {'geometry': polygon, 'poly_id': length}
-
-		bound.visualize(GeoSeries(untasked_polys), title="Extra Areas Found")
-		tasks = subtasks.filter_blocks_by_poly(tasks, boundary)
+def stage(streets, layers, boundary, city, title, visualize, utm_crs, options):
+	tasks = subtasks.get_tasks(streets, utm_crs, boundary, options)
 
 	if visualize:
-		bound.visualize(tasks, title=str(len(tasks)) + " Tasks Created", extras=[layers["sidewalks"]])
+		bound.visualize(tasks, title=str(len(tasks)) + " Tasks Created", extras=[streets])
 
-	click.echo(str(len(layers["sidewalks"])) + " Sidewalks Split Into " + str(len(tasks)) + " Tasks")
+	element_sum = 0
+	for layer in layers:
+		element_sum += len(layer)
+	click.echo(str(element_sum) + " Sidewalks Split Into " + str(len(tasks)) + " Tasks")
+
 	tasks = tasks.to_crs(web_merc_crs) # make sure crs is correct
 	title_escp = title.replace(' ', '_')
 	tasks_path = prepare_output_directory(tasks, city, title_escp)
@@ -50,9 +36,10 @@ def stage(streets, layers, boundary, city, title, visualize):
 		layers_gdfs[layer_key] = layers[layer_key].to_crs(web_merc_crs)
 
 	layers_gdfs = prepare_layer_for_osm(layers_gdfs)
+
+	click.echo('staging file was output to folder')
 	tasks_gdfs = split_geometry_into_tasks(layers_gdfs, tasks)
 	convert_to_osm_xml_and_write(layers_gdfs, tasks, tasks_gdfs, tasks_path, title_escp)
-	click.echo('staging file was output to folder')
 
 
 def prepare_output_directory(tasks, city, title_escp):

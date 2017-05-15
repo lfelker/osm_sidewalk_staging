@@ -16,6 +16,7 @@ from staging_manager import buffer_logic, bound, stage
 import data_manager
 from data_manager import standardize
 
+# import sidewalkify
 import sidewalkify
 
 VISUALIZE_LIMIT = 1500
@@ -25,7 +26,7 @@ def main():
 	redraw_sidewalks = True # allows skipping of redraw during development
 
 	click.echo("Loading Data")
-	json_sources = open("source_json_examples/sources_judkins_ufl_test.json").read()
+	json_sources = open("source_json_examples/sources_ufl.json").read()
 	sources = json.loads(json_sources)
 	import_name = sources['import_name']
 	city = sources['city']
@@ -37,13 +38,13 @@ def main():
 
 	# TODO: click.echo("clean data")
 
-
 	# when calculaing buffers and doing intersections crs should be in utm.
 	# for clip operation we want more than what the final buffer will be so we use multipler
 	boundary_clip   = bound.get_boundary(sources, streets_crs, streets_crs, buff_multiplier=1.25)
 	boundary_real = bound.get_boundary(sources, streets_crs, streets_crs)
 	sidewalks = None
 
+	# visualization takes too long if there is a lot of data
 	visualize = check_visualization_limit(len(streets))
 
 	if redraw_sidewalks:
@@ -54,17 +55,20 @@ def main():
 				raise ValueError("no streets found within specified boundary")
 
 			visualize = check_visualization_limit(len(streets))
-			if visualize:
-				bound.visualize(streets, buff=boundary_real, title="Streets in Boundary")
+			# if visualize:
+			# 	bound.visualize(streets, buff=boundary_real, title="Streets in Boundary")
 
 		click.echo("Standardizing Schema")
-		#streets = build_associated_street(streets, sources)
+		# streets = build_associated_street(streets, sources)
 		# Associated Street should be directly linked to OSM street value.
 		# To do this we would need to have a one to one mapping between municipal street data and OSM data
 		streets = prepare_sidewalk_offset(streets, sources)
 		st_meta = sources['layers']['streets']['metadata']
 		streets = standardize.standardize_df(streets, st_meta)
-		print(streets.head())
+
+		for line in streets['geometry']:
+			if len(line.coords) < 2:
+				raise ValueError
 
 		click.echo("Creating Graph Of Streets")
 		G = sidewalkify.graph.create_graph(streets)
@@ -72,8 +76,6 @@ def main():
 		click.echo("Finding Paths in Graph")
 		paths = sidewalkify.graph.process_acyclic(G)
 		paths += sidewalkify.graph.process_cyclic(G)
-
-		print(streets.head())
 
 		click.echo("Generating Sidewalks")
 		sidewalks = sidewalkify.draw.draw_sidewalks(paths, streets_crs, resolution=1)
@@ -84,35 +86,55 @@ def main():
 
 	click.echo("Converting Projections To Web Mercator")
 	sidewalks = sidewalks.to_crs(web_merc_crs)
+	print(sum_sidewalks(sidewalks, 'geometry'))
 	streets = streets.to_crs(web_merc_crs)
 	boundary_stage = bound.get_boundary(sources, streets_crs, web_merc_crs)
 
+	click.echo("Removing Freeways from streets Network")
+	# TODO: paramaterize this
+	if "waytype" in streets:
+		streets = streets.loc[streets.waytype != "freeway"]
+
 	click.echo("Visualizing Generated Sidewalks")
-	if visualize:
-		bound.visualize(sidewalks, buff=boundary_stage, title=import_name + " Generated Sidewalks")
-	else:
-		click.echo("Visualization Turned Off Due To Size Of Staging Data")
+	# if visualize:
+	# 	bound.visualize(sidewalks, buff=boundary_stage, title=import_name + " Generated Sidewalks")
+	# else:
+	# 	click.echo("Visualization Turned Off Due To Size Of Staging Data")
 
 	#generateCrossings()
 
 	#annotatecrossings()
 
-	layers_gdf = {
+	blocks_layers = {
 		'sidewalks': sidewalks
+	}
+
+	crossing_layers = {
+		#'crossings': crossings
 	}
 
 	if 'curbramps' in sources['layers']:
 		click.echo("Loading curbramps")
 		curbramps = gpd.read_file(sources['layers']['curbramps']['path'])
-		layers_gdf['curbramps'] = curbramps
+		crossing_layers['curbramps'] = curbramps
 
-	click.echo("Removing Freeways from streets Network")
-	if "waytype" in streets:
-		streets = streets.loc[streets.waytype != "freeway"]
 
-	click.echo("Starting Staging Process")	
+	click.echo("Starting Staging Process")
+	tasks_options = sources['tasks'] 
+	if tasks_options['joined'] == "True":
+		joined_layers = blocks_layers
+		for layer_key in crossing_layers.keys():
+			joined_layers[layer_key] = crossing_layers[layer_key]
+		click.echo("All layers staged together")
+		stage.stage(streets, joined_layers, boundary_stage, city, import_name, visualize, streets_crs, tasks_options)
+	else:
+		click.echo("Blocks and Crossings staged seperately")
+		block_tasks_options = {'type': tasks_options['blocks_type']}
+		stage.stage(streets, blocks_layers, boundary_stage, city, import_name + "_blocks", visualize, streets_crs, block_tasks_options)
+		crossings_tasks_options = {'type': tasks_options['crossings_type']}
+		stage.stage(streets, crossing_layers, boundary_stage, city, import_name + "_crossings", visualize, streets_crs, crossings_tasks_options)
 
-	stage.stage(streets, layers_gdf, boundary_stage, city, import_name, visualize)
+
 
 def check_visualization_limit(number_of_elements):
 	return number_of_elements < VISUALIZE_LIMIT
@@ -145,6 +167,14 @@ def build_associated_street(streets, sources):
 		streets = streets.apply(build_street, axis=1)
 	return streets
 
+def sum_sidewalks(gdf, sum_row_name):
+	sidewalk_sum = 0.0
+	for index, row in gdf.iterrows():
+		geo = row[sum_row_name]
+		road_length = geo.length
+		sidewalk_sum += road_length
+	return sidewalk_sum
+
 # convert offset values to follow <= 0 absent and >0 = offset distance
 # also conditionally convert waytype to offset value if offset distance unknown
 def prepare_sidewalk_offset(streets, sources):
@@ -166,7 +196,7 @@ def prepare_sidewalk_offset(streets, sources):
 		if offset in swk_absent_values or offset < 0:
 			return 0
 		else:
-			return 1
+			# return 1
 			if offset_type == "category":
 				waytype_colname = st_meta['waytype']['colname']
 				way_code = street[waytype_colname]

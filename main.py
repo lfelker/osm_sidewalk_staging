@@ -11,130 +11,121 @@ import matplotlib
 import fiona
 
 import staging_manager
-from staging_manager import buffer_logic, bound, stage
-
 import data_manager
+import sidewalkify
+import crossify
+from staging_manager import buffer_logic, bound, stage
 from data_manager import standardize
 
-# import sidewalkify
-import sidewalkify
-
-VISUALIZE_LIMIT = 1500
+VISUALIZE_LIMIT = 4000 # number of segments in data
+FINAL_CRS = {'init': 'epsg:4326'}
 
 def main():
-	web_merc_crs = {'init': 'epsg:4326'}
-	redraw_sidewalks = True # allows skipping of redraw during development
-
 	click.echo("Loading Data")
 	json_sources = open("source_json_examples/sources_ufl.json").read()
 	sources = json.loads(json_sources)
-	import_name = sources['import_name']
-	city = sources['city']
 
 	streets_path = sources['layers']['streets']['path']
 	streets =  gpd.read_file(streets_path)
 	streets_crs = streets.crs
-	# TODO: ensure UTM is correct
 
-	# TODO: click.echo("clean data")
-
-	# when calculaing buffers and doing intersections crs should be in utm.
+	# when calculaing buffers and doing intersections. crs should be in utm.
 	# for clip operation we want more than what the final buffer will be so we use multipler
-	boundary_clip   = bound.get_boundary(sources, streets_crs, streets_crs, buff_multiplier=1.25)
+	boundary_clip = bound.get_boundary(sources, streets_crs, streets_crs, buff_multiplier=1.25)
 	boundary_real = bound.get_boundary(sources, streets_crs, streets_crs)
-	sidewalks = None
 
-	# visualization takes too long if there is a lot of data
-	visualize = check_visualization_limit(len(streets))
+	if boundary_clip != None:
+		click.echo("Clipping Streets To Boundary")
+		streets = bound.bound(streets, boundary_clip)
+		if len(streets) == 0:
+			raise ValueError("no streets found within specified boundary")
 
-	if redraw_sidewalks:
-		if boundary_clip != None:
-			click.echo("Clipping Streets To Boundary")
-			streets = bound.bound(streets, boundary_clip)
-			if len(streets) == 0:
-				raise ValueError("no streets found within specified boundary")
+	click.echo("Visualizing Stagging Area")
+	visualize(streets, boundary_real, "Streets in Staging Area")
 
-			visualize = check_visualization_limit(len(streets))
-			# if visualize:
-			# 	bound.visualize(streets, buff=boundary_real, title="Streets in Boundary")
-
-		click.echo("Standardizing Schema")
-		# streets = build_associated_street(streets, sources)
-		# Associated Street should be directly linked to OSM street value.
-		# To do this we would need to have a one to one mapping between municipal street data and OSM data
-		streets = prepare_sidewalk_offset(streets, sources)
-		st_meta = sources['layers']['streets']['metadata']
-		streets = standardize.standardize_df(streets, st_meta)
-
-		for line in streets['geometry']:
-			if len(line.coords) < 2:
-				raise ValueError
-
-		click.echo("Creating Graph Of Streets")
-		G = sidewalkify.graph.create_graph(streets)
-
-		click.echo("Finding Paths in Graph")
-		paths = sidewalkify.graph.process_acyclic(G)
-		paths += sidewalkify.graph.process_cyclic(G)
-
-		click.echo("Generating Sidewalks")
-		sidewalks = sidewalkify.draw.draw_sidewalks(paths, streets_crs, resolution=1)
-		sidewalks.to_file('./output/cleaned/sidewalks.shp')
-		click.echo("Generated Sidewalks Outputed To: ./output/cleaned/sidewalks.shp")
-	else:
-		sidewalks = gpd.read_file('./output/cleaned/sidewalks.shp')
-
-	click.echo("Converting Projections To Web Mercator")
-	sidewalks = sidewalks.to_crs(web_merc_crs)
-	print(sum_sidewalks(sidewalks, 'geometry'))
-	streets = streets.to_crs(web_merc_crs)
-	boundary_stage = bound.get_boundary(sources, streets_crs, web_merc_crs)
-
-	click.echo("Removing Freeways from streets Network")
-	# TODO: paramaterize this
+	click.echo("Standardizing Schema")
+	streets = prepare_sidewalk_offset(streets, sources)
+	st_meta = sources['layers']['streets']['metadata']
+	streets = standardize.standardize_df(streets, st_meta)
 	if "waytype" in streets:
 		streets = streets.loc[streets.waytype != "freeway"]
 
+	click.echo("Creating Graph Of Streets")
+	G = sidewalkify.graph.create_graph(streets)
+
+	click.echo("Finding Paths in Graph")
+	paths = sidewalkify.graph.process_acyclic(G)
+	paths += sidewalkify.graph.process_cyclic(G)
+
+	click.echo("Generating Sidewalks")
+	sidewalks = sidewalkify.draw.draw_sidewalks(paths, streets_crs, resolution=1)
+	if sidewalks.empty:
+	    raise Exception('Generated No Sidewalks')
+	sidewalks.to_file('./output/cleaned/sidewalks.shp')
+	click.echo("Generated Sidewalks Outputed To: ./output/cleaned/sidewalks.shp")
+
+	click.echo('Generating Crossings...')
+	streets_clipped = bound.bound(streets, boundary_real)
+	full_crossings = crossify.cross.make_graph(sidewalks, streets_clipped)
+	if full_crossings.empty:
+	    raise Exception('Generated No Crossings')
+
+	click.echo('Creating Links...')
+	split_crossings = crossify.cross.split_crossings(full_crossings)
+	crossings = split_crossings['crossings']
+	links = split_crossings['links']
+	raised_curbs = split_crossings['raised_curbs']
+	# sw_ends = []
+	# for row in sidewalks.iterrows():
+	# 	row[1].geometry
+
 	click.echo("Visualizing Generated Sidewalks")
-	# if visualize:
-	# 	bound.visualize(sidewalks, buff=boundary_stage, title=import_name + " Generated Sidewalks")
-	# else:
-	# 	click.echo("Visualization Turned Off Due To Size Of Staging Data")
+	import_name = sources['import_name']
+	visualize(sidewalks, boundary_real, import_name + " Generated Sidewalks", [raised_curbs, full_crossings, streets])
 
-	#generateCrossings()
+	# Annotatecrossings()
 
-	#annotatecrossings()
+	click.echo("Converting Projections To Web Mercator")
+	sidewalks = sidewalks.to_crs(FINAL_CRS)
+	streets = streets.to_crs(FINAL_CRS)
+	boundary_stage = bound.get_boundary(sources, streets_crs, FINAL_CRS)
 
+	click.echo("Starting Staging Process")
 	blocks_layers = {
 		'sidewalks': sidewalks
 	}
 
 	crossing_layers = {
-		#'crossings': crossings
+		'crossings': crossings,
+		'links': links,
+		'raised_curbs': raised_curbs
 	}
 
-	if 'curbramps' in sources['layers']:
-		click.echo("Loading curbramps")
-		curbramps = gpd.read_file(sources['layers']['curbramps']['path'])
-		crossing_layers['curbramps'] = curbramps
+	# if 'curbramps' in sources['layers']:
+	# 	click.echo("Loading curbramps")
+	# 	curbramps = gpd.read_file(sources['layers']['curbramps']['path'])
+	# 	crossing_layers['curbramps'] = curbramps
 
-
-	click.echo("Starting Staging Process")
 	tasks_options = sources['tasks'] 
+	city = sources['city']
 	if tasks_options['joined'] == "True":
 		joined_layers = blocks_layers
 		for layer_key in crossing_layers.keys():
 			joined_layers[layer_key] = crossing_layers[layer_key]
-		click.echo("All layers staged together")
-		stage.stage(streets, joined_layers, boundary_stage, city, import_name, visualize, streets_crs, tasks_options)
+		click.echo("All Layers Are Being Staged Together")
+		stage.stage(streets, joined_layers, boundary_stage, city, import_name, streets_crs, tasks_options)
 	else:
-		click.echo("Blocks and Crossings staged seperately")
+		click.echo("Blocks and Crossings Are Being Staged Seperately")
 		block_tasks_options = {'type': tasks_options['blocks_type']}
-		stage.stage(streets, blocks_layers, boundary_stage, city, import_name + "_blocks", visualize, streets_crs, block_tasks_options)
+		stage.stage(streets, blocks_layers, boundary_stage, city, import_name + "_blocks", streets_crs, block_tasks_options)
 		crossings_tasks_options = {'type': tasks_options['crossings_type']}
-		stage.stage(streets, crossing_layers, boundary_stage, city, import_name + "_crossings", visualize, streets_crs, crossings_tasks_options)
+		stage.stage(streets, crossing_layers, boundary_stage, city, import_name + "_crossings", streets_crs, crossings_tasks_options)
 
-
+def visualize(data, stage_bound, vis_title, extra_data=[]):
+	if check_visualization_limit(len(data)):
+		bound.visualize(data, buff=stage_bound, title=vis_title, extras=extra_data)
+	else:
+		click.echo(vis_title + "Not Visualized Due To Size Of Data")
 
 def check_visualization_limit(number_of_elements):
 	return number_of_elements < VISUALIZE_LIMIT
@@ -146,9 +137,7 @@ def check_visualization_limit(number_of_elements):
 #        }
 def build_associated_street(streets, sources):
 
-	print("here")
 	if "associatedStreet" in sources["layers"]["streets"]["metadata"]:
-		print("now here")
 		columns = sources["layers"]["streets"]["metadata"]["associatedStreet"]["build_from_colnames"]
 
 		def build_street(street):

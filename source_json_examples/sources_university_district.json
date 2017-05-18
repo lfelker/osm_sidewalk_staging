@@ -8,6 +8,12 @@
     "attribute_selector_value": "University District",
     "buffer_distance_meters": 0
   },
+  "tasks": {
+    "joined": "True",
+    "type": "voronoi",
+    "blocks_type": "block",
+    "crossings_type": "voronoi"
+  },
   "layers": {
     "streets": {
     	"path": "./source_data/seattle/clean-streets/streets.shp",

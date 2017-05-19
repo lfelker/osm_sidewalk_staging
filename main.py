@@ -171,7 +171,7 @@ def prepare_sidewalk_offset(streets, sources):
 	swk_meta = sources['layers']['streets']['swk_coding']
 	offset_type = swk_meta['offset']['type']
 
-	def claculate_offset(street):
+	def calculate_offset(street):
 		swk_left_colname = st_meta['sw_left']['colname']
 		swk_right_colname = st_meta['sw_right']['colname']
 		left_offset = street[swk_left_colname]
@@ -196,7 +196,7 @@ def prepare_sidewalk_offset(streets, sources):
 				return offset
 
 	streets_crs = streets.crs
-	streets_correct_offset = streets.apply(claculate_offset, axis=1)
+	streets_correct_offset = streets.apply(calculate_offset, axis=1)
 	streets_correct_offset.crs = streets_crs
 	return streets_correct_offset
 

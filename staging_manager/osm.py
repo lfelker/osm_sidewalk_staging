@@ -50,7 +50,7 @@ def json_to_dom(json, featuretype):
     # OSM tags
     # features.validate()
 
-    # Convert to dom
+    # Convert to dom 
     return features.convert()
 
 

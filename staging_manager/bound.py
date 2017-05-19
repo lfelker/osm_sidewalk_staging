@@ -33,6 +33,7 @@ def get_boundary(sources, buffer_crs, result_crs, buff_multiplier=1):
 				# return polygon boundary
 				return buffer_logic.buffer_point(boundary_selection, buffer_distance, buffer_crs, result_crs)
 			else:
+				boundary_selection = boundary_selection.to_crs(result_crs)
 				boundaries = boundary_selection.geometry
 		
 		assert len(boundaries) == 1

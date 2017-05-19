@@ -35,7 +35,7 @@ def get_tasks(streets, utm_crs, boundary, options):
                     tasks.loc[length] = {'geometry': polygon, 'poly_id': length}
 
             # bound.visualize(GeoSeries(untasked_polys), title="Extra Areas Found")
-        tasks = filter_blocks_by_poly(tasks, boundary) # filter either task type hereA
+        tasks = filter_blocks_by_poly(tasks, boundary) # filter either task type here
     if tasks is None:
         raise Exception("Error in tasks creation")
     return tasks
@@ -91,6 +91,8 @@ def calculate_intersections(streets, utm_crs, cluster_distance=15):
 # calculates veronoi polygons from street intersection points
 def voronoi_subtasks(streets, utm_crs):
     intersections = calculate_intersections(streets, utm_crs)
+    if intersections is None or len(intersections) == 0:
+        raise Exception("Error finding intersections")
 
     points = []
     for point in intersections:
@@ -99,7 +101,6 @@ def voronoi_subtasks(streets, utm_crs):
     points = np.array(points)
 
     vor = Voronoi(points)
-    print(vor.ridge_vertices)
 
     lines = []
     for line in vor.ridge_vertices:
@@ -108,16 +109,17 @@ def voronoi_subtasks(streets, utm_crs):
             data_ok = True
             for point in vor.vertices[line]:
                 if point[1] < 47.0:
-                    print("ERROR")
+                    print("ERROR ")
                     print(point)
                     print(line)
                     data_ok = False
             if data_ok:
                 lines.append(shapely.geometry.LineString(vor.vertices[line]))
 
+
     polygons = list(ops.polygonize(lines))
     res = gpd.GeoDataFrame(geometry=polygons)
-    res.crs = WEB_CRS
+    res.crs = utm_crs
     return res
 
     # import matplotlib.pyplot as plt

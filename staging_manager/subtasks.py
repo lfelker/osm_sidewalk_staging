@@ -4,9 +4,11 @@ import shapely
 import pandas as pd
 import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
+from . import buffer_logic
 
 WEB_CRS = {'init': 'epsg:4326'}
 AREA_THRESH = 0.0000000001
+VORONOI_CLIP_BUFFER = 20
 
 def get_tasks(streets, utm_crs, boundary, options):
     task_type = options['type']
@@ -35,7 +37,7 @@ def get_tasks(streets, utm_crs, boundary, options):
                     tasks.loc[length] = {'geometry': polygon, 'poly_id': length}
 
             # bound.visualize(GeoSeries(untasked_polys), title="Extra Areas Found")
-        tasks = filter_blocks_by_poly(tasks, boundary) # filter either task type here
+        tasks = filter_blocks_by_poly(tasks, boundary, task_type) # filter either task type here
     if tasks is None:
         raise Exception("Error in tasks creation")
     return tasks
@@ -155,7 +157,7 @@ def blocks_poly_boundary_subtasks(streets, polygon):
     new_blocks = blocks.loc[blocks.intersects(polygon)].copy()
     return new_blocks
 
-def filter_blocks_by_poly(blocks, polygon):
+def filter_blocks_by_poly(blocks, polygon, task_type):
     '''Given a GeoDataFrame of polygons (or anything, really), return it
     filtered by that polygon:
     1) Remove block polygons that don't intersect the new polygon
@@ -175,7 +177,8 @@ def filter_blocks_by_poly(blocks, polygon):
     new_blocks = bbox_ixn.loc[bbox_ixn.intersects(polygon)].copy()
 
     # Alter the blocks to the shape of the enclosing polygon
-    #new_blocks['geometry'] = new_blocks.intersection(polygon)
+    if task_type == "voronoi":
+        new_blocks['geometry'] = new_blocks.intersection(polygon)
 
     # Recreate the index + poly_id
     new_blocks.reset_index(drop=True, inplace=True)

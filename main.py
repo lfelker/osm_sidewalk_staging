@@ -22,7 +22,7 @@ FINAL_CRS = {'init': 'epsg:4326'}
 
 def main():
 	click.echo("Loading Data")
-	json_sources = open("source_json_examples/sources_ufl.json").read()
+	json_sources = open("source_json_examples/sources_university_district.json").read()
 	sources = json.loads(json_sources)
 
 	streets_path = sources['layers']['streets']['path']
@@ -41,7 +41,7 @@ def main():
 			raise ValueError("no streets found within specified boundary")
 
 	click.echo("Visualizing Stagging Area")
-	visualize(streets, boundary_real, "Streets in Staging Area")
+	#visualize(streets, boundary_real, "Streets in Staging Area")
 
 	click.echo("Standardizing Schema")
 	streets = prepare_sidewalk_offset(streets, sources)
@@ -66,24 +66,48 @@ def main():
 
 	click.echo('Generating Crossings...')
 	streets_clipped = bound.bound(streets, boundary_real)
-	full_crossings = crossify.cross.make_graph(sidewalks, streets_clipped)
+	crossings_results = crossify.cross.make_graph(sidewalks, streets_clipped)
+	full_crossings = crossings_results['crossings']
+
+	click.echo('Joining Crossings To Sidewalks')
+	sidewalks = crossify.cross.add_endpoints_to_sidewalks(sidewalks, full_crossings)
 	if full_crossings.empty:
 	    raise Exception('Generated No Crossings')
 
-	click.echo('Creating Links...')
+	click.echo('Offsetting Crossing From Corner')
+	offset_results = crossify.cross.generate_crossing_offset(sidewalks, full_crossings)
+	full_crossings = offset_results['crossings']
+	sidewalks = offset_results['sidewalks']
+
+	click.echo('Creating Links')
 	split_crossings = crossify.cross.split_crossings(full_crossings)
 	crossings = split_crossings['crossings']
 	links = split_crossings['links']
 	raised_curbs = split_crossings['raised_curbs']
-	# sw_ends = []
-	# for row in sidewalks.iterrows():
-	# 	row[1].geometry
+
+	corner_crossing_nodes = split_crossings['corner_crossing_nodes']
+	corner_crossing_nodes = gpd.GeoDataFrame(geometry=corner_crossing_nodes)
+	click.echo('Generating Corner Curb Ramps')
+	corner_ramps_results = crossify.cross.generate_corner_ramps(sidewalks, corner_crossing_nodes)
+
+	click.echo('Preparing Crossing Geo Data Frames')
+	crossings.extend(corner_ramps_results['crossings'])
+	links.extend(corner_ramps_results['links'])
+	lowered_curbs = corner_ramps_results['lowered_curbs']
+
+	crossings = gpd.GeoDataFrame(geometry=crossings)
+	links = gpd.GeoDataFrame(geometry=links)
+	raised_curbs = gpd.GeoDataFrame(geometry=raised_curbs)
+	lowered_curbs = gpd.GeoDataFrame(geometry=lowered_curbs)
+
+	crossings.crs =  sidewalks.crs
+	links.crs = sidewalks.crs
+	raised_curbs.crs = sidewalks.crs
+	lowered_curbs.crs = sidewalks.crs
 
 	click.echo("Visualizing Generated Sidewalks")
 	import_name = sources['import_name']
-	visualize(sidewalks, boundary_real, import_name + " Generated Sidewalks", [raised_curbs, full_crossings, streets])
-
-	# Annotatecrossings()
+	visualize(sidewalks, boundary_real, import_name + " Generated Sidewalks", [links, raised_curbs, crossings, streets, lowered_curbs])
 
 	click.echo("Converting Projections To Web Mercator")
 	sidewalks = sidewalks.to_crs(FINAL_CRS)
@@ -98,9 +122,11 @@ def main():
 	crossing_layers = {
 		'crossings': crossings,
 		'links': links,
-		'raised_curbs': raised_curbs
+		'raised_curbs': raised_curbs,
+		'lowered_curbs': lowered_curbs
 	}
 
+	# It was decided not use any CITY curb ramp info
 	# if 'curbramps' in sources['layers']:
 	# 	click.echo("Loading curbramps")
 	# 	curbramps = gpd.read_file(sources['layers']['curbramps']['path'])

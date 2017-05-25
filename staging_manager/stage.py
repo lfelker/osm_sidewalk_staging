@@ -19,11 +19,9 @@ BASE_URL = 'https://import.opensidewalks.com'
 def stage(streets, layers, boundary, city, title, utm_crs, options):
 	tasks = subtasks.get_tasks(streets, utm_crs, boundary, options)
 
-	bound.visualize(tasks, title=str(len(tasks)) + " Tasks Created", extras=[streets])
-
 	element_sum = 0
 	for layer in layers:
-		element_sum += len(layer)
+		element_sum += len(layers[layer])
 	click.echo(str(element_sum) + " Sidewalks Split Into " + str(len(tasks)) + " Tasks")
 
 	title_escp = title.replace(' ', '_')
@@ -32,6 +30,12 @@ def stage(streets, layers, boundary, city, title, utm_crs, options):
 	layers_gdfs = {}
 	for layer_key in layers.keys():
 		layers_gdfs[layer_key] = layers[layer_key].to_crs(FINAL_CRS)
+
+	vis_data = []
+	for key in layers_gdfs.keys():
+		vis_data.append(layers_gdfs[key])
+
+	bound.visualize(tasks, title=str(len(tasks)) + " Tasks Created", extras=vis_data)
 
 	layers_gdfs = prepare_layer_for_osm(layers_gdfs)
 
@@ -69,6 +73,7 @@ def prepare_layer_for_osm(layers_gdfs):
 			layer['highway'] = 'footway'
 			layer['footway'] = 'sidewalk'
 			layer['wheelchair'] = 'yes'
+			layer['surface'] = 'paved'
 		elif layer_name == 'crossings':
 			if 'marked' in layer:
 				layer = layer[['geometry', 'marked']]
@@ -76,9 +81,14 @@ def prepare_layer_for_osm(layers_gdfs):
 				layer = layer[['geometry']]
 			layer['highway'] = 'footway'
 			layer['footway'] = 'crossing'
+			layer['surface'] = 'paved'
+			layer['crossing'] = 'unmarked'
 		elif layer_name == 'raised_curbs':
 			layer = layer[['geometry']]
 			layer['kerb'] = 'raised'
+		elif layer_name == 'lowered_curbs':
+			layer = layer[['geometry']]
+			layer['kerb'] = 'lowered'
 
 		# all get
 		layer['project'] = 'OpenSidewalks'
@@ -150,7 +160,7 @@ def convert_to_osm_xml_and_write(layers_gdfs, tasks, tasks_gdfs, tasks_path, tit
 			feature_type = key
 			if key == 'links':
 				feature_type = 'sidewalks'
-			elif key == 'raised_curbs':
+			elif key == 'raised_curbs' or key == 'lowered_curbs':
 				feature_type = 'curbramps'
 
 			features = osm.json_to_dom(the_json, featuretype=feature_type)

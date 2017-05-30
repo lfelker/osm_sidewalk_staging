@@ -1,20 +1,22 @@
 {
   "city": "seattle",
-  "import_name": "judkins_sidewalks_no_boundary",
+  "import_name": "University District",
   "boundary": {
-    "path": "None",
-    "selection": "False",
-    "attribute_selector": "",
-    "attribute_selector_value": "",
-    "buffer_distance_meters": 0
+    "path": "./source_data/seattle/Neighborhoods.shp",
+    "selection": "True",
+    "attribute_selector": "S_HOOD",
+    "attribute_selector_value": "University District",
+    "buffer_distance_meters": 20
   },
   "tasks": {
     "joined": "True",
-    "type": "voronoi"
+    "type": "voronoi",
+    "blocks_type": "block",
+    "crossings_type": "voronoi"
   },
   "layers": {
     "streets": {
-    	"path": "./source_data/stations/judkins_sidewalks.shp",
+    	"path": "./source_data/seattle/clean-streets/streets.shp",
       "source": "https://data.seattle.gov/api/assets/038178CC-C40F-4FD2-912C-1E1CF2602D00?download=true",
       "swk_coding": {
         "absent": {
@@ -32,7 +34,7 @@
             "nullvalue": 0
         },
         "sw_left": {
-          "colname": "sw_left"
+        	"colname": "sw_left"
         },
         "sw_right": {
           "colname": "sw_right"

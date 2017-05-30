@@ -1,12 +1,12 @@
 {
   "city": "seattle",
-  "import_name": "University District",
+  "import_name": "Mann_Test",
   "boundary": {
     "path": "./source_data/seattle/Neighborhoods.shp",
     "selection": "True",
     "attribute_selector": "S_HOOD",
-    "attribute_selector_value": "University District",
-    "buffer_distance_meters": 0
+    "attribute_selector_value": "Mann",
+    "buffer_distance_meters": 20
   },
   "tasks": {
     "joined": "True",
@@ -40,20 +40,6 @@
           "colname": "sw_right"
         }
       }
-    },
-    "curbramps": {
-      "path": "/source_data/seattle/curbramps.shp"
-    }
-  },
-  "annotations": {
-    "marked_crosswalks": {
-      "url": "https://data.seattle.gov/api/assets/843B8A94-11B2-4B6C-88CA-B9F54803B07D?download=true",
-      "ftype": "zip",
-      "shapefile": "Marked_Crosswalks/SDOT_Marked_Crosswalks",
-      "annotates": "crossings",
-      "default_tags": [{
-        "marked": true
-      }]
     }
   }
 }

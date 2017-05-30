@@ -1,16 +1,20 @@
 {
   "city": "seattle",
-  "import_name": "Judkins Station",
+  "import_name": "judkins",
   "boundary": {
-    "path": "./source_data/stations/east_link_light_rail_stations.shp",
+    "path": "./source_data/stations/east_link_stations.shp",
     "selection": "True",
     "attribute_selector": "name",
     "attribute_selector_value": "judkins",
-    "buffer_distance_meters": 850
+     "buffer_distance_meters": 850
+  },
+  "tasks": {
+    "joined": "True",
+    "type": "voronoi"
   },
   "layers": {
     "streets": {
-    	"path": "./source_data/seattle/clean-streets/streets.shp",
+      "path": "./source_data/seattle/clean-streets/streets.shp",
       "source": "https://data.seattle.gov/api/assets/038178CC-C40F-4FD2-912C-1E1CF2602D00?download=true",
       "swk_coding": {
         "absent": {
@@ -23,31 +27,17 @@
         }
       },
       "metadata": {
+        "pkey": {
+            "colname": "pkey",
+            "nullvalue": 0
+        },
         "sw_left": {
           "colname": "sw_left"
         },
         "sw_right": {
           "colname": "sw_right"
-        },
-        "pkey": {
-            "colname": "pkey",
-            "nullvalue": 0
         }
       }
-    },
-    "curbramps": {
-      "path": "./source_data/seattle/curbramps.shp"
-    }
-  },
-  "annotations": {
-    "marked_crosswalks": {
-      "url": "https://data.seattle.gov/api/assets/843B8A94-11B2-4B6C-88CA-B9F54803B07D?download=true",
-      "ftype": "zip",
-      "shapefile": "Marked_Crosswalks/SDOT_Marked_Crosswalks",
-      "annotates": "crossings",
-      "default_tags": [{
-        "marked": true
-      }]
     }
   }
 }

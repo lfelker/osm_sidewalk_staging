@@ -1,86 +1,65 @@
 {
   "city": "seattle",
-  "import_name": "judkins_sidewalks_no_boundary",
+  "import_name": "wilburton",
   "boundary": {
-    "path": "None",
-    "selection": "False",
-    "attribute_selector": "",
-    "attribute_selector_value": "",
-    "buffer_distance_meters": 0
+    "path": "./source_data/stations/east_link_stations.shp",
+    "selection": "True",
+    "attribute_selector": "name",
+    "attribute_selector_value": "wilburton",
+     "buffer_distance_meters": 850
+  },
+  "tasks": {
+    "joined": "False",
+    "type": "voronoi",
+    "blocks_type": "block",
+    "crossings_type": "voronoi"
   },
   "layers": {
     "streets": {
-    	"path": "./source_data/stations/judkins_sidewalks.shp",
-      "source": "https://data.seattle.gov/api/assets/038178CC-C40F-4FD2-912C-1E1CF2602D00?download=true",
+      "path": "./source_data/king_county/transportation_network_sidewalks.shp",
+      "source": "King County GIS Data Portal and Urban Forum Lab Sidewalk Data",
       "swk_coding": {
         "absent": {
-          "code": [0],
+          "code": [0, 2],
           "_comment": "absent coding are values that signify no sidewalk, 0 means anything less than zero"
         },
         "offset": {
-          "type": "feet",
-          "_comment": "offset type options: [feet, meter, none]. If none, any non absent value means only present."
+          "type": "category",
+          "category_offset": {
+            "freeway": 0,
+            "primary_arterial": 12,
+            "minor_arterial": 10,
+            "colector_arterial": 8,
+            "local": 6.25
+          },
+          "_comment": "offset type options: [value, category, none]. If none, any non absent value means only present. category uses way type"
         }
       },
       "metadata": {
-        "sidewalk_left": {
-          "colname": "sw_left"
-        },
-        "sidwalk_right": {
-          "colname": "sw_right"
-        },
         "pkey": {
-            "colname": "pkey",
+            "colname": "TLINK_ID",
             "nullvalue": 0
         },
-        "layer": {
-            "colname": "layer",
-            "colname_orig": "STRUCTURE_TYPE",
-            "categorymap": {
-                "0": -1,
-                "1": 0,
-                "2": 1,
-                "3": null
-            }
+        "sw_left": {
+          "colname": "kcn_swk__1"
+        },
+        "sw_right": {
+          "colname": "kcn_swk__2"
         },
         "waytype": {
-            "colname": "waytype",
-            "colname_orig": "SEGMENT_TYPE",
-            "categorymap": {
-                "1": "street",
-                "2": "motorway_link",
-                "3": "highway",
-                "4": "motorway_link",
-                "5": "alley",
-                "6": "stairs",
-                "7": "pedestrian",
-                "8": "trail",
-                "9": "railroad",
-                "10": "dock",
-                "11": "lightrail",
-                "12": "monorail",
-                "13": "trolley",
-                "14": "parking",
-                "15": null
-            }
-        },
-        "divider": {
-            "colname": "divider",
-            "colname_orig": "DIVIDED_CODE",
-            "categorymap": {
-                "1": "undivided",
-                "2": "boulevard",
-                "3": "median",
-                "4": "gradeseparated",
-                "5": "jersey_barrier",
-                "6": "divided",
-                "7": null
-            }
+          "colname": "KC_FCC_ID",
+          "categorymap": {
+            "F": "freeway",
+            "P": "primary_arterial",
+            "M": "minor_arterial",
+            "C": "colector_arterial",
+            "L": "local"
+          }
         }
       }
     },
     "curbramps": {
-      "path": "/source_data/seattle/curbramps.shp"
+      "path": "./source_data/seattle/curbramps.shp"
     }
   },
   "annotations": {

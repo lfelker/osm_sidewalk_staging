@@ -5,12 +5,16 @@ tool to prepare sidewalk data for OSM staging with Open Sidewalks schema
 - aquire appropriate files (streets network with sidewalk left and right data) and boundary specification file
 - fill out sources.json with information about your data and the type of tasks you are trying to create
 - download some packages not on pip. These are currently these packages, but eventually all will change to access map versions
-	- download them from github and locally pip3 install ./folder_name
+	- download them from github and then locally run command: pip3 install [path to local package folder]
 	- https://github.com/lfelker/crossify ./
 	- https://github.com/lfelker/sidewalkify
-	- https://github.com/AccessMap/accessmap-database-bootup/tree/master/data_manager
-- download all remaing used packages with pip. The latest versions used are specified in requirements.txt. 
+	- https://github.com/AccessMap/accessmap-database-bootup/tree/master/
+	for this final package we need to download a sub folder of accessmap-database-bootup called package_manager 
+- download all remaing used packages with pip. The latest versions used are specified in requirements.txt.
+	command is pip3 install -r requirements.txt
 - run with python 3 
+
+if you get an error about libspatialindex, you need to 'brew install spatialindex' then run 
 
 # Basic Workflow
 ## input required:

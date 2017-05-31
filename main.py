@@ -22,7 +22,7 @@ FINAL_CRS = {'init': 'epsg:4326'}
 
 def main():
 	click.echo("Loading Data")
-	json_sources = open("source_json_examples/sources.json").read()
+	json_sources = open("sources.json").read()
 	sources = json.loads(json_sources)
 
 	streets_path = sources['layers']['streets']['path']

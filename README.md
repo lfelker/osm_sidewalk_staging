@@ -3,13 +3,14 @@ tool to prepare sidewalk data for OSM staging with Open Sidewalks schema
 
 # Setup:
 - aquire appropriate files (streets network with sidewalk left and right data) and boundary specification file
-- fill our sources.json
-- run with python 3
+- fill out sources.json with information about your data and the type of tasks you are trying to create
 - download some packages not on pip. These are currently these packages, but eventually all will change to access map versions
-	- https://github.com/lfelker/crossify
+	- download them from github and locally pip3 install ./folder_name
+	- https://github.com/lfelker/crossify ./
 	- https://github.com/lfelker/sidewalkify
 	- https://github.com/AccessMap/accessmap-database-bootup/tree/master/data_manager
-- download all remaing used packages with pip. The latest versions used are specified in requirements.txt
+- download all remaing used packages with pip. The latest versions used are specified in requirements.txt. 
+- run with python 3 
 
 # Basic Workflow
 ## input required:

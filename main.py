@@ -61,7 +61,7 @@ def main():
 	sidewalks = sidewalkify.draw.draw_sidewalks(paths, streets_crs, resolution=1)
 	if sidewalks.empty:
 	    raise Exception('Generated No Sidewalks')
-	sidewalks.to_file('./output/cleaned/sidewalks.shp')
+	# sidewalks.to_file('./output/cleaned/sidewalks.shp')
 	click.echo("Generated Sidewalks Outputed To: ./output/cleaned/sidewalks.shp")
 
 	click.echo('Generating Crossings...')
@@ -105,6 +105,8 @@ def main():
 	raised_curbs.crs = sidewalks.crs
 	lowered_curbs.crs = sidewalks.crs
 
+	sidewalks_copy = bound.bound(sidewalks, boundary_real)
+	click.echo(str(sum_sidewalks(sidewalks_copy, 'geometry')) + " meters of sidewalks in staging area")
 	click.echo("Visualizing Generated Sidewalks")
 	import_name = sources['import_name']
 	visualize(sidewalks, boundary_real, import_name + " Generated Sidewalks", [links, raised_curbs, crossings, streets, lowered_curbs])

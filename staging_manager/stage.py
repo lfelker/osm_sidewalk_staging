@@ -22,7 +22,7 @@ def stage(streets, layers, boundary, city, title, utm_crs, options):
 	element_sum = 0
 	for layer in layers:
 		element_sum += len(layers[layer])
-	click.echo(str(element_sum) + " Sidewalks Split Into " + str(len(tasks)) + " Tasks")
+	click.echo(str(element_sum) + " Sidewalks Segments Split Into " + str(len(tasks)) + " Tasks")
 
 	title_escp = title.replace(' ', '_')
 	tasks_path = prepare_output_directory(tasks, city, title_escp)

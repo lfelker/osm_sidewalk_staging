@@ -13,9 +13,9 @@ tool to prepare sidewalk data for OSM staging with Open Sidewalks schema
 	- pip3 install git+git://github.com/AccessMap/crossify/tree/crossify_new.git
 	- pip3 install git+git://github.com/AccessMap/sidewalkify
 
-	- This package needs to be installed with the first method since it is a sub backage.
+	- This package needs to be installed with the first method since we want to insatall it's sub backage.
 	- https://github.com/AccessMap/accessmap-database-bootup/tree/master/
-	- for this final package we need to download a sub folder of accessmap-database-bootup called package_manager so the pip command will be pip3 install [path to downloaded reop]/data_manager 
+	- for this final package we need to download a sub folder of accessmap-database-bootup called data_manager so the pip command will be pip3 install [path to downloaded reop]/data_manager 
 - download all remaing used packages with pip. The latest versions used are specified in requirements.txt.
 	command is pip3 install -r requirements.txt
 - run with python 3

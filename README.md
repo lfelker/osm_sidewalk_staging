@@ -1,10 +1,10 @@
 # About
-tool to prepare sidewalk data for OSM staging with Open Sidewalks schema
+A tool to prepare sidewalk data for OSM staging with the Open Sidewalks schema
 
 # Setup:
 - aquire appropriate files (streets network with sidewalk left and right data) and boundary specification file
 - fill out sources.json with information about your data and the type of tasks you are trying to create
-- download the packages not on pip. These are currently these packages
+- Clone these packages (don't use pip):
 	- https://github.com/AccessMap/crossify/tree/crossify_new
 	- https://github.com/AccessMap/sidewalkify
 	- https://github.com/AccessMap/accessmap-database-bootup/tree/master/
@@ -13,22 +13,22 @@ tool to prepare sidewalk data for OSM staging with Open Sidewalks schema
 	- pip3 install git+git://github.com/AccessMap/crossify/tree/crossify_new.git
 	- pip3 install git+git://github.com/AccessMap/sidewalkify
 
-	- This package needs to be installed with the first method since we want to insatall it's sub backage.
+	- This package needs to be installed with the first method since we want to install it's subpackage.
 	- https://github.com/AccessMap/accessmap-database-bootup/tree/master/
-	- for this final package we need to download a sub folder of accessmap-database-bootup called data_manager so the pip command will be pip3 install [path to downloaded reop]/data_manager 
-- download all remaing used packages with pip. The latest versions used are specified in requirements.txt.
+	- for this final package we need to download a sub folder of accessmap-database-bootup called data_manager so the pip command will be pip3 install [path to downloaded repo]/data_manager 
+- download all remaing packages with pip. The latest versions used are specified in requirements.txt.
 	command is pip3 install -r requirements.txt
 - run with python 3
 
-if you get an error about libspatialindex, you need to 'brew install spatialindex' then run 
+if you get an error about libspatialindex, you need to `brew install spatialindex` then run 
 
 # Basic Workflow
 ## input required:
-- streets center line data set with sidewalk left and right data
+- streets centerline data set with sidewalk left and right data
 - sources.json file in source_json_examples folder edited to have appropriate parameter information
 
 ## input optional:
-- bondary of data to stage like a nighborhood to stage
+- bondary of data to stage such as a neighborhood
 
 ## output:
 - osm.xml files split into tasks (by intersection or block) to be uploaded to Open Sidewalks tasking manager tasks.opensidewalks.com
@@ -43,14 +43,14 @@ Look at examples in sources_json_examples
 - The name of the folder where the resulting osm.xml are found
 - Example: "import_name": "University District"
 
-### Bondary Specification
+### Boundary Specification
 - Give details of the boundary of the data you want staged
 #### Path
 - Example: "path": "./source_data/seattle/neighborhoods.shp"
 #### Selection
 - Specify if you want a slection of your data staged (True) or all of it (False).
 - Example "selection": "True"
-#### Attribute Selector Colum Name
+#### Attribute Selector Column Name
 - Example "attribute_selector": "name",
 #### Attribute Selector value
 - Example "attribute_selector_value": "University District",
@@ -109,7 +109,7 @@ Look at examples in sources_json_examples
 	}
 ##### Metadata
 1) primary key
-- colum name
+- column name
 - null value
 2) sidewalk left value 
 - column name
